@@ -2,9 +2,14 @@
 # -*- coding: utf-8 -*-
 
 
-import urllib
-import urllib.request
-import http.cookiejar
+try:
+    import urllib
+    import urllib.request as urequest
+    import http.cookiejar
+except Exception as e:
+    logging.error('you use python2.x: %s'%e)
+    import urllib
+    import urllib2 as urequest    
 
 import json,time
 
@@ -12,19 +17,19 @@ import json,time
 class requestCore():
     headers = {}
     def __init__(self):
-        self.opener = urllib.request.build_opener()
+        self.opener = urequest.build_opener()
         pass
     
 
     def simpleUrlopen(self, req):
-        return urllib.request.urlopen(req)
+        return urequest.urlopen(req)
 
     def buildPostRequestCore(self, url = None, payload = None, headers = None):
         data = urllib.parse.urlencode(payload).encode(encoding = 'UTF8')
         if headers is None:
-            req = urllib.request.Request(url, data)
+            req = urequest.Request(url, data)
         else:
-            req = urllib.request.Request(url, data, headers = headers)
+            req = urequest.Request(url, data, headers = headers)
         return req
     
 
@@ -41,8 +46,8 @@ class requestCore():
             return False
 
         # check type , but i do not want to do now
-        handler = urllib.request.HTTPCookieProcessor(cookie)
-        self.opener = urllib.request.build_opener(handler)
+        handler = urequest.HTTPCookieProcessor(cookie)
+        self.opener = urequest.build_opener(handler)
         return self.opener
         
         

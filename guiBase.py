@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tkinter
-from tkinter import *
 
-import tkinter.filedialog
+import logging
+
+try:
+    import tkinter
+    from tkinter import *
+    import tkinter.filedialog as filedialog
+except Exception as e:
+    logging.error('your use python2.x: %s'%e)
+    import Tkinter as tkinter
+    from Tkinter import *
+    import tkFileDialog as filedialog
+    
 
 
 
@@ -78,7 +87,8 @@ class handleFiles():
         text_handle.delete(0.0, tkinter.END)
 
     def filepath(self, filetype):
-        return tkinter.filedialog.askopenfilename(filetypes=filetype)
+        #return tkinter.filedialog.askopenfilename(filetypes=filetype)
+        return filedialog.askopenfilename(filetypes=filetype)
 
     def clearEntry(self, entry_handle):
         entry_handle.delete(0, tkinter.END)

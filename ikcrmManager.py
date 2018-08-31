@@ -13,14 +13,10 @@ logging.basicConfig(level = logging.DEBUG,
 )
 
 
-# need delete
-import urllib
-import urllib.request
-import http.cookiejar
-import json,time
-# need delete
-
 from ikcrmRequestCore import ikcrmRequestCore
+
+import time
+import os
 
 try:
     from dealExcelCore import dealExcelCore
@@ -71,7 +67,7 @@ class ikcrmSearchInfo(handleFiles):
    
         self.search = self.addText(width = 50, height = 7, state = 'normal')
         self.search.insert('end', 'You can check a number above.')
-        self.search.config(state = 'disabled')
+        #self.search.config(state = 'disabled')
         self.search.place(x = 30, y = 164)
 
         self.bnt2.config(state = 'disabled')
@@ -81,6 +77,11 @@ class ikcrmSearchInfo(handleFiles):
         self.ikcrm = ikcrm_base
         self.labels = ['phone_number', 'created_time', 'company', 'customer.name', 'project', 'user.name']
 
+        self.bnt4 = self.addBnt('clear cookie', self.bnt4event)
+        self.bnt4.place(x = 300, y = 114)
+       
+    def bnt4event(self):
+        os.remove('mozilla_cookie.txt')
 
     def bnt1event(self):
         #filename = self.filepath([('txt','.txt'), ('excel','.xlsx')])
@@ -166,14 +167,19 @@ class ikcrmSearchInfo(handleFiles):
         try:
             self.writeExcel('outfile.xlsx', infos = info_lists)
         except Exception as e:
-            print('write files: %s'%e)
+            logging.error('write files: %s'%e)
             self.writeTxt('outfile.txt', infos = info_lists)
         
 
 
-    def checkCustomers(self, number, info_lists):
+    def checkCustomers(self, number, info_lists = None):
         #logging.debug('start check:%s'%number)
+
         info = self.ikcrm.checkCustomers(number)
+
+        if info_lists is None:
+            return info
+
         if info is None:
             # deal with after
             labels = self.labels
@@ -228,9 +234,6 @@ class ikcrmSearchInfo(handleFiles):
     def writeExcel(self, filename, infos):
 
 # last one
-        self.writeTxt(filename, infos)
-        sys.exit()
-
         sd = dealExcelCore()
         sd.setlabels(self.labels)
 
@@ -243,11 +246,30 @@ class ikcrmSearchInfo(handleFiles):
 
 
     def bnt3event(self):
+        t = threading.Thread(target = self.bnt3event_thread)
+        t.setDaemon(True)
+        t.start()
+
+    def bnt3event_thread(self):
         number = (self.bnt3_entry.get())
-        self.search.config(state = 'normal')
+
+        #self.search.config(state = 'normal')
         self.clearText(self.search)
-        self.search.insert('end', number)
-        self.search.config(state = 'disabled')
+
+        cookiefile = 'mozilla_cookie.txt' 
+        cookie = self.ikcrm.loadMozillaCookie(cookiefile)
+        opener = self.ikcrm.buildOpener(cookie) 
+
+        info = self.checkCustomers(number) 
+        if info is None:
+            self.search.insert('end', '没有此客户')
+        else:
+            blockinfo = ''
+            for num,item in enumerate(info):
+                blockinfo = blockinfo + str(item) + ':' + info[item] + '\n'
+            self.search.insert('end', blockinfo)
+
+        #self.search.config(state = 'readonly')
 
 
 

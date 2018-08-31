@@ -7,9 +7,13 @@ logging.basicConfig(level = logging.ERROR,
                     format = '%(message)s'
 )
 
-import urllib
-import urllib.request
-import http.cookiejar
+try:
+    import urllib
+    import urllib.request
+    import http.cookiejar
+except Exception as e:
+    logging.error('you use python2.x: %s'%e)
+
 
 import json,time
 

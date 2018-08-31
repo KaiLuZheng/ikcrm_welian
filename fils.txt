@@ -1,0 +1,9 @@
+checkcustomer.py
+dealExcelCore.py
+guiBase.py
+ikcrmManager.py
+ikcrmRequestCore.py
+ikcrm_welian.py
+readme.md
+requestCore.py
+setup.py
