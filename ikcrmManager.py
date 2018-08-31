@@ -13,7 +13,6 @@ logging.basicConfig(level = logging.DEBUG,
 )
 
 
-
 # need delete
 import urllib
 import urllib.request
@@ -22,7 +21,12 @@ import json,time
 # need delete
 
 from ikcrmRequestCore import ikcrmRequestCore
-from dealExcelCore import dealExcelCore
+
+try:
+    from dealExcelCore import dealExcelCore
+except Exception as e:
+    logging.error('import dealExcelCore error: %s'%e)
+
 import threading
 
 import re
@@ -200,12 +204,21 @@ class ikcrmSearchInfo(handleFiles):
         return numbers
 
     def writeTxt(self, filename, infos):
+        # save number and user
+        '''
         with open(filename, 'w') as f:
             for num, item in enumerate(infos):
-                f.write(str(num) + ' ')
+                customer = str(num) + '\t' + item['phone_number'] + '\t' + item['user.name'] + '\n'
+                f.write(customer)
+        '''
+        # save all infos
+        with open(filename, 'w') as f:
+            for num, item in enumerate(infos):
+                f.write(str(num) + '\t')
                 for i in item:
-                    f.write('['+item[i]+']'+'\t')
+                    f.write(item[i]+'\t')
                 f.write('\n')
+        
         logging.debug('save as txt')
 
     def readExcel(self, filename):
@@ -215,6 +228,9 @@ class ikcrmSearchInfo(handleFiles):
     def writeExcel(self, filename, infos):
 
 # last one
+        self.writeTxt(filename, infos)
+        sys.exit()
+
         sd = dealExcelCore()
         sd.setlabels(self.labels)
 
@@ -232,7 +248,6 @@ class ikcrmSearchInfo(handleFiles):
         self.clearText(self.search)
         self.search.insert('end', number)
         self.search.config(state = 'disabled')
-
 
 
 

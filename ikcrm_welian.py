@@ -5,7 +5,7 @@ import sys
 import logging
 
 # it should be set on a config file, I do not want to set now
-logging.basicConfig(level = logging.DEBUG,
+logging.basicConfig(level = logging.INFO,
                     format = '%(message)s'
 )
 
