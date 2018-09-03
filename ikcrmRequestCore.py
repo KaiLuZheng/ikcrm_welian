@@ -19,11 +19,28 @@ import json,time
 
 from requestCore import requestCore
 
+import re
+import sys
+
 
 class ikcrmRequestCore(requestCore):
     login_url = 'https://dingtalk.e.ikcrm.com/api/v2/auth/login' # post login 
     home_url = 'https://dingtalk.e.ikcrm.com/dingtalk/sessions/new?' # get sign in token
     search_head_url = 'https://dingtalk.e.ikcrm.com/duplicate/search?' # check customer
+    search_all_url = 'http://dingtalk.e.ikcrm.com/customers/' # check customer all infos + id
+    search_api_url = "https://dingtalk.e.ikcrm.com/api/v2/customers?" # + number
+
+    '''
+        params = {"user_token":self.user_token,"device":"dingtalk","version_code":"3.3.0"}
+        params["query"] = checkinfo
+        time.sleep(1)
+
+# need change 
+        data = urllib.parse.urlencode(params).encode(encoding='UTF8')
+        req = urllib.request.Request(url+'?'+data.decode('utf8'))
+
+    '''
+
 
     user_agent = r'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'
     headers = {'User-Agent': user_agent, 'Connection': 'keep-alive'}
@@ -62,10 +79,18 @@ class ikcrmRequestCore(requestCore):
         info['project'] = cus_dict['text_asset_b7bbd60d']
         info['user.name'] = cus_dict['user.name']
 
-        labels = ['phone_number', 'created_time', 'company', 'customer.name', 'project','user.name']
+        labels = ['phone_number', 'created_time', 'company', 'customer.name', 'project','user.name','status','updated_at','lastest.content']
 
 #        for num, customer in enumerate(info):
 #            logging.debug('%s:%s'%(labels[num], info[customer]))
+
+        #self.dealWithAllInfo(str(cus_dict['id']))
+        try:
+            others = self.dealWithAllInfo(str(cus_dict['id']), str(cus_dict['address.phone']))
+        except Exception as e:
+            logging.error('dealWithAllInfo.error: %s:%s'%(e,cus_dict['address.phone']))
+
+        info.update(others)
         
         return info
 
@@ -83,6 +108,63 @@ class ikcrmRequestCore(requestCore):
         text_asset_b7bbd60d : "综合电商？"  # project of customer
         user.name : "罗仕海"                # adviser
         '''
+
+    def dealWithAllInfo(self, num_id, number):
+        #req = urllib.request.Request(self.search_all_url + num_id, headers = self.headers)  # a page of customer
+        host_url = 'http://dingtalk.e.ikcrm.com/customers?'
+
+        headers = self.headers
+        headers['Referer'] = 'http://dingtalk.e.ikcrm.com/customers'
+
+        param = {}
+        param = {'search_key':number} # number
+        param['section_only'] = 'true'
+        #param['custom_field_name'] = 'address.phone'
+        #param['scope'] = 'all_own'
+        #param['order'] = 'asc'
+        #param['type']  = 'advance'
+        #param['sort'] = 'customers.updated_at%20desc' # updated_at time
+        #param['per_page'] = '50'
+
+        url = host_url + urllib.parse.urlencode(param)
+        #print('url: ',url)
+
+        req = urllib.request.Request( url , headers = headers)
+        res = self.opener.open(req)
+        html = res.read().decode()
+    
+        #with open(num_id+'.html', 'w') as f:
+        #    f.write(html)
+        infos = {}
+
+# id=47158877
+        a = re.search(r'<tr class(.*?)%s">(.*?)</tr>'%(num_id), html, re.S)
+# status
+        b = re.search(r'"status_mapped">(.*?)</td>', a.group(), re.S)
+        c = re.search(r'"value">(.*?)</div>', b.group(), re.S)
+        #print(c.group(1).replace('\n', '').replace(' ', ''))
+        infos['status'] = (c.group(1).replace('\n', '').replace(' ', ''))
+
+# updated_at
+        b = re.search(r'real_revisit_at">(.*?)</td>', a.group(), re.S)
+        c = re.search(r'datetime=(.*?)>(.*?)</time>', b.group(), re.S)
+        #print(c.group(2).replace(' ', '-'))
+        infos['updated_at'] = (c.group(2).replace(' ', '-'))
+
+# lastest_revisit_log.content
+        b = re.search(r'lastest_revisit_log.content">(.*?)</td>', a.group(), re.S)
+        c = re.search(r'data-content(.*?)>(.*?)</div>', b.group(), re.S)
+        #print(c.group(2))
+        try:
+            infos['lastest.content'] = (c.group(2).replace('\n','').replace('\r',''))
+        except Exception as e:
+            logging.error('lastest content.error: %s:%s'%(e,number))
+            infos['lastest.content'] = ''
+            
+
+        #print(infos)
+        return infos
+
 
 
 
@@ -110,7 +192,43 @@ class ikcrmRequestCore(requestCore):
 
 
 
+if __name__ == '__main__':
 
+    '''
+
+    with open('18618459162.html') as f:
+        html = f.read()
+
+# id=47158877
+    a = re.search(r'<tr class(.*?)%s">(.*?)</tr>'%(str(47158877)), html, re.S)
+# status
+    b = re.search(r'"status_mapped">(.*?)</td>', a.group(), re.S)
+    c = re.search(r'"value">(.*?)</div>', b.group(), re.S)
+    print(c.group(1).replace('\n', '').replace(' ', ''))
+
+# updated_at
+    b = re.search(r'real_revisit_at">(.*?)</td>', a.group(), re.S)
+    c = re.search(r'datetime=(.*?)>(.*?)</time>', b.group(), re.S)
+    print(c.group(2).replace(' ', '-'))
+
+# lastest_revisit_log.content
+    b = re.search(r'lastest_revisit_log.content">(.*?)</td>', a.group(), re.S)
+    c = re.search(r'data-content(.*?)>(.*?)</div>', b.group(), re.S)
+    print(c.group(2))
+
+    sys.exit()
+    '''
+
+    '''
+    A = ikcrmRequestCore()
+    cookiefile = 'mozilla_cookie.txt'
+    cookie = A.loadMozillaCookie(cookiefile)
+
+    A.buildOpener(cookie)
+    A.checkCustomers('18618459162')
+    A.checkCustomers('13918849400')
+
+    ''' 
 
 
 

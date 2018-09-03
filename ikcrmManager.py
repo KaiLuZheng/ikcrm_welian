@@ -220,6 +220,7 @@ class ikcrmSearchInfo(handleFiles):
         # save all infos
         with open(filename, 'w') as f:
             for num, item in enumerate(infos):
+                print('writing: %s'%item['phone_numbe'])
                 f.write(str(num) + '\t')
                 for i in item:
                     f.write(item[i]+'\t')
