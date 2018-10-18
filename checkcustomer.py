@@ -24,7 +24,7 @@ url = 'http://dingtalk.e.ikcrm.com/duplicate/search?key=customer&query=133660062
 
 login_url = 'https://dingtalk.e.ikcrm.com/api/v2/auth/login'
 
-payload={"login": "13858124314","password": "A123456789", 'device':'web'}
+payload={"login": "13858124314","password": "", 'device':'web'}
 
 data = urllib.parse.urlencode(payload).encode(encoding='UTF8')
 req = urllib.request.Request(login_url, data)
