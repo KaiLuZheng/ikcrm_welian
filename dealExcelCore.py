@@ -30,7 +30,6 @@ class dealExcelCore(object):
 
         self.filename = filename
 
-
     def setlabels(self, labels):
         self.setDate(row = 1, infos = labels)
 

@@ -24,12 +24,13 @@ url = 'http://dingtalk.e.ikcrm.com/duplicate/search?key=customer&query=133660062
 
 login_url = 'https://dingtalk.e.ikcrm.com/api/v2/auth/login'
 
-payload={"login": "18767106508","password": "1991350zklZ", 'device':'web'}
+payload={"login": "13858124314","password": "A123456789", 'device':'web'}
 
 data = urllib.parse.urlencode(payload).encode(encoding='UTF8')
 req = urllib.request.Request(login_url, data)
 r = urllib.request.urlopen(req)
 sjson = r.read().decode('utf8')
+logging.debug(sjson)
 user_token=json.loads(sjson)['data']['user_token']
 
 home_url = 'https://dingtalk.e.ikcrm.com/dingtalk/sessions/new?' # user_token=7658bad3630ab262ffdaa03cc08e63d7

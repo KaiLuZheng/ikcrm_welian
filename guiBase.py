@@ -4,6 +4,7 @@
 
 import logging
 
+
 try:
     import tkinter
     from tkinter import *
@@ -13,8 +14,6 @@ except Exception as e:
     import Tkinter as tkinter
     from Tkinter import *
     import tkFileDialog as filedialog
-    
-
 
 
 class handleFiles():

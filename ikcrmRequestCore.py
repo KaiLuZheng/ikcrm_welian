@@ -3,9 +3,6 @@
 
 
 import logging
-logging.basicConfig(level = logging.ERROR,
-                    format = '%(message)s'
-)
 
 try:
     import urllib
@@ -22,6 +19,8 @@ from requestCore import requestCore
 import re
 import sys
 
+from labels import project_labels as labels
+
 
 class ikcrmRequestCore(requestCore):
     login_url = 'https://dingtalk.e.ikcrm.com/api/v2/auth/login' # post login 
@@ -29,6 +28,7 @@ class ikcrmRequestCore(requestCore):
     search_head_url = 'https://dingtalk.e.ikcrm.com/duplicate/search?' # check customer
     search_all_url = 'http://dingtalk.e.ikcrm.com/customers/' # check customer all infos + id
     search_api_url = "https://dingtalk.e.ikcrm.com/api/v2/customers?" # + number
+    base_info = 'https://dingtalk.e.ikcrm.com/customers/%s?only_base_info=true'
 
     '''
         params = {"user_token":self.user_token,"device":"dingtalk","version_code":"3.3.0"}
@@ -79,37 +79,45 @@ class ikcrmRequestCore(requestCore):
         info['project'] = cus_dict['text_asset_b7bbd60d']
         info['user.name'] = cus_dict['user.name']
 
-        labels = ['phone_number', 'created_time', 'company', 'customer.name', 'project','user.name','status','updated_at','lastest.content']
+        #labels = ['phone_number', 'created_time', 'company', 'customer.name', 'project','user.name','status','updated_at','lastest.content']
 
-#        for num, customer in enumerate(info):
-#            logging.debug('%s:%s'%(labels[num], info[customer]))
+        for num, customer in enumerate(info):
+            logging.debug('%s:%s'%(labels[num], info[customer]))
 
-        #self.dealWithAllInfo(str(cus_dict['id']))
+
+
         try:
             others = self.dealWithAllInfo(str(cus_dict['id']), str(cus_dict['address.phone']))
         except Exception as e:
+            logging.error('error file: %s'%__file__)
             logging.error('dealWithAllInfo.error: %s:%s'%(e,cus_dict['address.phone']))
 
+        
         info.update(others)
         
         return info
 
-        '''
-        address.phone: "13142256056"        # phone number
-        company_name : "" 
-        created_at : "2017-12-19 09:25"     # created_time
-        id : 28648819                       # page id: http://dingtalk.e.ikcrm.com/customers/ + id
-        is_allow_grab : null
-        is_common_customer : false
-        is_invisible : false
-        name : "13142256056"                # company 
-        own : true
-        text_asset_88c8ce2e : "刘欣"        # name of customer
-        text_asset_b7bbd60d : "综合电商？"  # project of customer
-        user.name : "罗仕海"                # adviser
-        '''
 
-    def dealWithAllInfo(self, num_id, number):
+    def dealWithAllUpdates(self, num_id): 
+
+        '''
+        发现在内存中的这个，更加合适获取跟进信息 
+        '''
+        url = self.base_info%num_id
+        headers = self.headers
+        headers['X-Requested-With'] = 'XMLHttpRequest'
+
+        req = urllib.request.Request( url , headers = headers)
+        res = self.opener.open(req)
+        html = res.read().decode('utf8')
+
+        with open('test.xml', 'w') as f:
+            f.write(html)
+
+
+
+
+    def dealWithAllInfo(self, num_id, number): # the old one what use search customer page 
         #req = urllib.request.Request(self.search_all_url + num_id, headers = self.headers)  # a page of customer
         host_url = 'http://dingtalk.e.ikcrm.com/customers?'
 
@@ -119,50 +127,58 @@ class ikcrmRequestCore(requestCore):
         param = {}
         param = {'search_key':number} # number
         param['section_only'] = 'true'
-        #param['custom_field_name'] = 'address.phone'
-        #param['scope'] = 'all_own'
-        #param['order'] = 'asc'
-        #param['type']  = 'advance'
-        #param['sort'] = 'customers.updated_at%20desc' # updated_at time
-        #param['per_page'] = '50'
-
         url = host_url + urllib.parse.urlencode(param)
-        #print('url: ',url)
+
+        logging.debug('url: %s'%url)
 
         req = urllib.request.Request( url , headers = headers)
         res = self.opener.open(req)
         html = res.read().decode()
     
-        #with open(num_id+'.html', 'w') as f:
-        #    f.write(html)
         infos = {}
+
 
 # id=47158877
         a = re.search(r'<tr class(.*?)%s">(.*?)</tr>'%(num_id), html, re.S)
 # status
         b = re.search(r'"status_mapped">(.*?)</td>', a.group(), re.S)
         c = re.search(r'"value">(.*?)</div>', b.group(), re.S)
-        #print(c.group(1).replace('\n', '').replace(' ', ''))
+        logging.debug('status:') 
+        logging.debug(c.group(1).replace('\n', '').replace(' ', ''))
         infos['status'] = (c.group(1).replace('\n', '').replace(' ', ''))
 
 # updated_at
         b = re.search(r'real_revisit_at">(.*?)</td>', a.group(), re.S)
         c = re.search(r'datetime=(.*?)>(.*?)</time>', b.group(), re.S)
-        #print(c.group(2).replace(' ', '-'))
+        logging.debug('updated_at:')
+        logging.debug(c.group(2).replace(' ', '-'))
         infos['updated_at'] = (c.group(2).replace(' ', '-'))
 
 # lastest_revisit_log.content
-        b = re.search(r'lastest_revisit_log.content">(.*?)</td>', a.group(), re.S)
-        c = re.search(r'data-content(.*?)>(.*?)</div>', b.group(), re.S)
-        #print(c.group(2))
-        try:
-            infos['lastest.content'] = (c.group(2).replace('\n','').replace('\r',''))
-        except Exception as e:
-            logging.error('lastest content.error: %s:%s'%(e,number))
-            infos['lastest.content'] = ''
-            
+        logging.info('crap revisit...')
 
-        #print(infos)
+        b = re.search(r'lastest_revisit_log.content">(.*?)</td>', a.group(), re.S)
+
+        try: 
+            c = re.search(r'data-content(.*?)>(.*?)</div>', b.group(), re.S)
+            logging.debug(c.group(2))
+        except Exception as e:
+            logging.error('page changed, cannot crap revisit_log: %s'%e)
+            logging.error('error: %s'%__file__)
+            infos['lastest.content'] = 'crap failed.'
+            logging.debug('crap end')
+        else:
+            try:
+                infos['lastest.content'] = (c.group(2).replace('\n','').replace('\r',''))
+            except Exception as e:
+                logging.error('lastest content.error: %s:%s'%(e,number))
+                infos['lastest.content'] = ''
+            
+        logging.info('crap revisit end ')
+
+        logging.debug(infos)
+
+
         return infos
 
 
@@ -225,12 +241,18 @@ if __name__ == '__main__':
     cookie = A.loadMozillaCookie(cookiefile)
 
     A.buildOpener(cookie)
-    A.checkCustomers('18618459162')
-    A.checkCustomers('13918849400')
-
+    #A.checkCustomers('15900628966')
+    A.dealWithAllUpdates('41840717')
+   
     ''' 
 
+    with open('test.html') as f:
+        html = f.read()
 
+    a = re.search(r'updated_at(.*?)time>', html, re.S).group()
+    b = re.search(r'datetime=(.*?)time', a, re.S).group()
+    c = re.search(r'>(.*?)<', b, re.S).group(1)
+    print(c)
 
 
 

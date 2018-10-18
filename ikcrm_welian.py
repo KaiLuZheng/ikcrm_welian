@@ -6,9 +6,6 @@ import os
 import logging
 
 # it should be set on a config file, I do not want to set now
-logging.basicConfig(level = logging.INFO,
-                    format = '%(message)s'
-)
 
 from ikcrmManager import ikcrmSignIn
 from ikcrmManager import ikcrmSearchInfo
@@ -17,6 +14,8 @@ from ikcrmManager import ikcrmSearchInfo
 if __name__ == '__main__':
 
     
+    logging.basicConfig(level = logging.DEBUG)
+
     isCookieExists = (os.path.exists('mozilla_cookie.txt'))
 
     if isCookieExists is False:

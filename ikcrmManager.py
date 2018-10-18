@@ -7,11 +7,6 @@ from guiBase import handleFiles
 
 import logging
 
-# it should be set on a config file, I do not want to set now
-logging.basicConfig(level = logging.DEBUG,
-                    format = '%(message)s'
-)
-
 
 from ikcrmRequestCore import ikcrmRequestCore
 
@@ -21,7 +16,8 @@ import os
 try:
     from dealExcelCore import dealExcelCore
 except Exception as e:
-    logging.error('import dealExcelCore error: %s'%e)
+    with open('error.log', 'a') as f:
+        f.write('import dealExcelCore error: %s'%e)
 
 import threading
 
@@ -36,7 +32,6 @@ TXT = 0
 EXCEL = 1
 
 ikcrm_base = ikcrmRequestCore()
-
 
 # need to change a good idea
 def charline(char, num):
@@ -220,7 +215,7 @@ class ikcrmSearchInfo(handleFiles):
         # save all infos
         with open(filename, 'w') as f:
             for num, item in enumerate(infos):
-                print('writing: %s'%item['phone_numbe'])
+                #print('writing: %s'%item['phone_numbe'])
                 f.write(str(num) + '\t')
                 for i in item:
                     f.write(item[i]+'\t')
@@ -322,6 +317,11 @@ class ikcrmSignIn(signInBase):
         
 
 if __name__ == '__main__':
+
+# it should be set on a config file, I do not want to set now
+    logging.basicConfig(level = logging.DEBUG,
+                    format = '%(message)s'
+)
     t = {'1':1, '2':2, '3':3}
     print(dict2list(t))
 
